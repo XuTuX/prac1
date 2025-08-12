@@ -1,4 +1,5 @@
-'use clinet';
+// context/AuthContext.tsx
+'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -7,39 +8,38 @@ import { auth } from '@/lib/firebase'; // src 폴더를 쓴다면 '@/src/lib/fir
 interface AuthContextType {
     user: User | null;
     loading: boolean;
-    idtoken: string | null;
+    idToken: string | null;
 }
 
-const AuthContext = createContext<AuthContextType>({
-    user: null,
-    loading: true,
-    idtoken: null,
-});
+const AuthContext = createContext<AuthContextType>({ user: null, loading: true, idToken: null });
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-    const [user, setUser] = React.useState<User | null>(null);
-    const [loading, setLoading] = React.useState<boolean>(true);
-    const [idtoken, setIdToken] = React.useState<string | null>(null);
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [idToken, setIdToken] = useState<string | null>(null);
 
-    React.useEffect(() => {
+    useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             setUser(user);
-            setLoading(false);
             if (user) {
                 const token = await user.getIdToken();
                 setIdToken(token);
             } else {
                 setIdToken(null);
             }
+            setLoading(false);
         });
 
         return () => unsubscribe();
     }, []);
 
+    const value = { user, loading, idToken };
+
     return (
-        <AuthContext.Provider value={{ user, loading, idtoken }}>
-            {children}
+        <AuthContext.Provider value={value}>
+            {!loading && children}
         </AuthContext.Provider>
     );
 };
+
 export const useAuth = () => useContext(AuthContext);
